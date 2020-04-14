@@ -1,0 +1,14 @@
+.active{
+    color:white;
+    background:blue;
+}
+#table td {
+ width:50px;
+ border: 2px solid black;
+ font-size: larger;
+}
+
+#table {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}

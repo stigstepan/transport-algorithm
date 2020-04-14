@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Транспортная задача</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+    <button id='delrow'>Удалить строку</button>
+    <button id='delcell'>Удалить столбец</button>
+    <button id='addcell'>Добавить столбец</button>
+    <button id='addrow'>Добавить строку</button>
+    <button id='editTd'>Редактировать</button>
+    <button id='saveTd'>Сохранить</button>
+    <table id="table">
+        <tr>
+            <td>&nbsp;</td>
+            <td>1</td>
+            <td>2</td>
+            <td>3</td>
+            <td>4</td>
+            <td>Запасы</td>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>1</td>
+            <td>2</td>
+            <td>4</td>
+            <td>3</td>
+            <td>6</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>4</td>
+            <td>3</td>
+            <td>8</td>
+            <td>5</td>
+            <td>8</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>2</td>
+            <td>7</td>
+            <td>6</td>
+            <td>3</td>
+            <td>10</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>2</td>
+        </tr>
+        <tr>
+            <td>Потребности</td>
+            <td>4</td>
+            <td>6</td>
+            <td>8</td>
+            <td>8</td>
+            <td>&nbsp;</td>
+        </tr>
+
+    </table>
+    
+    <button id='calculate'>Расчитать</button>
+</body>
+
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="determine.js"></script>
+<script src="table.js"></script>
+
+</html>
