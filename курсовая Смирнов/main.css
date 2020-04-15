@@ -3,9 +3,9 @@
     background:blue;
 }
 #table td {
- width:50px;
- border: 2px solid black;
- font-size: larger;
+    width:50px;
+    border: 2px solid black;
+    font-size: larger;
 }
 
 #table {

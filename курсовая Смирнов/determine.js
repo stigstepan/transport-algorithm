@@ -44,8 +44,7 @@ function calculate () {
         }
     }
 
-
-    console.log('Стоимость: ' + cheapestCoast());
+    cheapestCoast();
 }
 
 function cheapestCoast () {
@@ -64,6 +63,8 @@ function cheapestCoast () {
 
         end = checkEnd();
     }
+
+    $('#resultField').attr('value', 'Стоимость: ' + resCoast);
     return resCoast;
 }
 
