@@ -52,7 +52,7 @@ $(function () {
         $cell.empty().append(text);
     });
     $('#calculate').click(function () {
-        cheapestCost();
+        calculate();
     });
 
 });
