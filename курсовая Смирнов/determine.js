@@ -1,19 +1,18 @@
-let coasts = [];
-let needs = [];
-let stocks = [];
+
 
 
 function calculate () {
-    coasts = [];
-    needs = [];
-    stocks = [];
+    let coasts = [];
+    let needs = [];
+    let stocks = [];
+    let referencePlan = []
     // get value
     trs = $('table tr td').get().map(td => td.innerText);
 
     let i = 0;
     let j = 0;
     let k = 0;
-    let tmpcoasts = [];
+    let strCoasts = [];
     for (let s = 0; s < trs.length; s++) {
         if(k == 0) {
             j++;
@@ -30,62 +29,69 @@ function calculate () {
             stocks.push(+trs[s]);
             k++;
         } else { // coast cell
-            tmpcoasts.push(+trs[s]);
+            strCoasts.push(+trs[s]);
         }
     }
 
     let row = [];
-    for (i = 0; i < tmpcoasts.length; i++) {
-        row.push(tmpcoasts[i]);
+    for (i = 0; i < strCoasts.length; i++) {
+        row.push(strCoasts[i]);
         
         if ((i+1) % (j-2) == 0) {
             coasts.push(row);
+            referencePlan.push(new Array(row.length));
             row = [];
         }
     }
 
-    cheapestCoast();
+    northWest(coasts, needs, stocks); // calculate by North-West methods
+    cheapestCoast(coasts, needs, stocks, referencePlan); // calculate by cheapest coast method, and initialize referencePlan
+    potentials(coasts, needs, stocks, referencePlan); // check referencePlan by method of potentials
 }
 
-function cheapestCoast () {
+function cheapestCoast (coasts, needs, stocks, referencePlan) {
     let end = false;
     let resCoast = 0;
     let minVl = 0;
+    let coastsCopy = JSON.parse(JSON.stringify(coasts));
+    let needsCopy = JSON.parse(JSON.stringify(needs));
+    let stocksCopy = JSON.parse(JSON.stringify(stocks));
 
     while (!end) {
-        let [i, j] = findMinCoast();
+        let [i, j] = findMinCoast(coastsCopy);
 
-        minVl = (needs[j] < stocks[i]) ? needs[j] : stocks[i];
-        resCoast += minVl * coasts[i][j];
-        coasts[i][j] = NaN;
-        needs[j] -= minVl;
-        stocks[i] -= minVl;
+        minVl = (needsCopy[j] < stocksCopy[i]) ? needsCopy[j] : stocksCopy[i];
+        resCoast += minVl * coastsCopy[i][j];
+        referencePlan[i][j] = minVl || undefined;
+        coastsCopy[i][j] = NaN;
+        needsCopy[j] -= minVl;
+        stocksCopy[i] -= minVl;
 
-        end = checkEnd();
+        end = checkEnd(needsCopy, stocksCopy);
     }
 
-    $('#resultField').attr('value', 'Стоимость: ' + resCoast);
+    $('#cheapestCoastResultField').attr('value', 'Стоимость: ' + resCoast);
     return resCoast;
 }
 
-function findMinCoast () {
+function findMinCoast (coastsCopy) {
     let minI = minJ = 1000, minCoast = 9999999;
-    for (let i = 0; i < coasts.length; i++) {
-        for (let j = 0; j < coasts[i].length; j++) {
-            if(!Number.isNaN(coasts[i][j]) && coasts[i][j] < minCoast && coasts[i][j] != 0) {
+    for (let i = 0; i < coastsCopy.length; i++) {
+        for (let j = 0; j < coastsCopy[i].length; j++) {
+            if(!Number.isNaN(coastsCopy[i][j]) && coastsCopy[i][j] < minCoast && coastsCopy[i][j] != 0) {
                 minI = i;
                 minJ = j;
-                minCoast = coasts[i][j];
+                minCoast = coastsCopy[i][j];
             }
         }
     }
     if(minI == 1000 || minJ == 1000) {
-        for (let i = 0; i < coasts.length; i++) {
-            for (let j = 0; j < coasts[i].length; j++) {
-                if(!Number.isNaN(coasts[i][j]) && coasts[i][j] < minCoast) {
+        for (let i = 0; i < coastsCopy.length; i++) {
+            for (let j = 0; j < coastsCopy[i].length; j++) {
+                if(!Number.isNaN(coastsCopy[i][j]) && coastsCopy[i][j] < minCoast) {
                     minI = i;
                     minJ = j;
-                    minCoast = coasts[i][j];
+                    minCoast = coastsCopy[i][j];
                 }
             }
         }
@@ -93,7 +99,7 @@ function findMinCoast () {
     return [minI, minJ];
 }
 
-function checkEnd () {
+function checkEnd (needs, stocks) {
     let res = true;
     needs.forEach(function (need) {
         if (need != 0) { res = false; }
@@ -102,4 +108,119 @@ function checkEnd () {
         if (stock != 0) { res = false; }
     });
     return res;
+}
+
+function northWest (coasts, needs, stocks) {
+    let resCoast = 0;
+    let minVl = 0;
+    let coastsCopy = JSON.parse(JSON.stringify(coasts));
+    let needsCopy = JSON.parse(JSON.stringify(needs));
+    let stocksCopy = JSON.parse(JSON.stringify(stocks));
+
+    for (let i = 0, j = 0; i < coastsCopy.length && j < coastsCopy[i].length;) { // step i then step j
+            
+        coast = coastsCopy[i][j];
+        const nextJStep = (needsCopy[j] < stocksCopy[i]);
+
+        minVl = (needsCopy[j] < stocksCopy[i]) ? needsCopy[j] : stocksCopy[i];
+        resCoast += minVl * coastsCopy[i][j];
+        coastsCopy[i][j] = NaN;
+        needsCopy[j] -= minVl;
+        stocksCopy[i] -= minVl;
+
+        if (nextJStep) {
+            j++;
+        } else {
+            i++;
+        }
+    }
+
+    $('#northWestResultField').attr('value', 'Стоимость: ' + resCoast);
+    return resCoast;
+}
+
+function potentials (coasts, needs, stocks, referencePlan) {
+    let end = false;
+    let resCoast = 0;
+    let referencePlanCopy = JSON.parse(JSON.stringify(referencePlan));
+    let coastsCopy = JSON.parse(JSON.stringify(coasts));
+    let estimates = new Array(coasts.length);
+    estimates.forEach(function (arr) {
+        arr.push(new Array(coasts.length));
+    })
+    // let needsCopy = JSON.parse(JSON.stringify(needs));
+    // let stocksCopy = JSON.parse(JSON.stringify(stocks));
+
+    while (!end) {
+        let potentials = getPotentials(coastsCopy, referencePlanCopy)
+
+        end = checkEstimatesIdleRoutes(coastsCopy, referencePlanCopy, potentials, estimates);
+
+        if (!end) {
+            goCycle(referencePlanCopy);
+        }
+    }
+
+    resCoast = getCoast(coastsCopy, referencePlanCopy);
+
+    $('#potentioalsResultField').attr('value', 'Стоимость: ' + resCoast);
+    return resCoast;
+}
+
+function getPotentials (coasts, referencePlan) {
+    let pNeeds = new Array(coasts.length);
+    let pStocks = new Array(coasts.length);
+    
+    pNeeds[0] = 0;
+
+    for (let i = 0; i < coasts.length; i++) {
+        for (let j = 0; j < coasts.length; j++) {
+            if (referencePlan[i][j] == undefined) { continue; }
+            if (pNeeds[j] != undefined) {
+                pStocks[i] = coasts[i][j] - pNeeds[j];
+            } else if (pStocks[i] != undefined) {
+                pNeeds[j] = coasts[i][j] - pStocks[i];
+            }
+        }
+    }
+
+    return {needs: pNeeds, stocks: pStocks};
+}
+
+function checkEstimatesIdleRoutes (coasts, referencePlan, potentials, estimates) {
+    let end = true;
+    let pots = 0;
+    let res = 0;
+    for (let i = 0; i < coasts.length; i++) {
+        for (let j = 0; j < coasts.length; j++) {
+            if (referencePlan[i][j]) { continue; }
+
+            pots = potentials.needs[j] + potentials.stocks[i];
+            res = coasts[i][j] - pots;
+            estimates[i][j] = res;
+            
+            if (res < 0) {
+                end = false;
+            }
+        }
+    }
+
+    return end;
+}
+
+function getCoast (coasts, referencePlan) {
+    let res = 0;
+
+    for (let i = 0; i < coasts.length; i++) {
+        for (let j = 0; j < coasts.length; j++) {
+            if(!referencePlan[i][j]) { continue; }
+            res += coasts[i][j] * referencePlan[i][j];
+        }
+    }
+
+    return res;
+}
+
+function goCycle (referencePlan) {
+    
 }
