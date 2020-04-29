@@ -145,9 +145,9 @@ function potentials (coasts, needs, stocks, referencePlan) {
     let referencePlanCopy = JSON.parse(JSON.stringify(referencePlan));
     let coastsCopy = JSON.parse(JSON.stringify(coasts));
     let estimates = new Array(coasts.length);
-    estimates.forEach(function (arr) {
-        arr.push(new Array(coasts.length));
-    })
+    for (let i = 0; i < estimates.length; i++) {
+        estimates[i] = new Array(coasts.length);
+    }
     // let needsCopy = JSON.parse(JSON.stringify(needs));
     // let stocksCopy = JSON.parse(JSON.stringify(stocks));
 
@@ -156,8 +156,10 @@ function potentials (coasts, needs, stocks, referencePlan) {
 
         end = checkEstimatesIdleRoutes(coastsCopy, referencePlanCopy, potentials, estimates);
 
+        let {minI, minJ} = findMinEstimate(estimates);
+
         if (!end) {
-            goCycle(referencePlanCopy);
+            goCycle(minI, minJ, referencePlanCopy);
         }
     }
 
@@ -221,6 +223,33 @@ function getCoast (coasts, referencePlan) {
     return res;
 }
 
-function goCycle (referencePlan) {
-    
+function findMinEstimate (estimates) {
+    let minI = minJ = 0, minEstimate = 9999999;
+    for (let i = 0; i < estimates.length; i++) {
+        for (let j = 0; j < estimates[i].length; j++) {
+            if (estimates[i][j] && estimates[i][j] < minEstimate) {
+                minI = i;
+                minJ = j;
+                minEstimate = estimates[i][j];
+            }
+        }
+    }
+    return [minI, minJ];
+}
+
+function goCycle (startI, startJ, referencePlan) {
+    let curentI = startI;
+    let curentJ = startJ;
+    let prevI = curentI, prevJ = curentJ;
+    let passedPoint = []; 
+    do {
+        for (let i = 0; i < referencePlan.length; i++) {
+            if(passedPoint.includes)
+            if (referencePlan[i][curentJ]) {
+                curentI = i;
+            }
+        }
+        
+    } while (curentI != startI && curentJ != startJ)
+
 }
