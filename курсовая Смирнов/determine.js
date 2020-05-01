@@ -156,7 +156,7 @@ function potentials (coasts, needs, stocks, referencePlan) {
 
         end = checkEstimatesIdleRoutes(coastsCopy, referencePlanCopy, potentials, estimates);
 
-        let {minI, minJ} = findMinEstimate(estimates);
+        let [minI, minJ] = findMinEstimate(estimates);
 
         if (!end) {
             goCycle(minI, minJ, referencePlanCopy);
@@ -240,14 +240,49 @@ function findMinEstimate (estimates) {
 function goCycle (startI, startJ, referencePlan) {
     let curentI = startI;
     let curentJ = startJ;
+    let pass = false;
+    let findPoint = false;
+
     let prevI = curentI, prevJ = curentJ;
-    let passedPoint = []; 
+
+    let passedPoint = [{i: startI, j: startJ}]; 
+
     do {
         for (let i = 0; i < referencePlan.length; i++) {
-            if(passedPoint.includes)
+            pass = passedPoint.some(function (pt) {
+                return pt.i == i && pt.j == curentJ;
+            });
+            if(pass) {
+                continue;
+            }
             if (referencePlan[i][curentJ]) {
                 curentI = i;
+                passedPoint.push({i: curentI, j: curentJ});
+                findPoint = true;
+                break;
             }
+        }
+        if(!findPoint) {
+            for (let j = 0; j < referencePlan.length; j++) {
+                pass = passedPoint.some(function (pt) {
+                    return (pt.i == curentI && pt.j == j);
+                });
+                if (curentI == startI && j == startJ && passedPoint.length > 3) {
+                    return passedPoint;
+                }
+                if(pass) {
+                    continue;
+                }
+                if (referencePlan[curentI][j]) {
+                    curentJ = j;
+                    passedPoint.push({i: curentI, j: curentJ});
+                    findPoint = true;
+                    break;
+                }
+            }
+        }
+        if (!findPoint) {
+            return null;
         }
         
     } while (curentI != startI && curentJ != startJ)
