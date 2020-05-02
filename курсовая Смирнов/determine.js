@@ -1,7 +1,6 @@
+var step = true;
 
-
-
-function calculate () {
+function calculate() {
     let coasts = [];
     let needs = [];
     let stocks = [];
@@ -14,7 +13,7 @@ function calculate () {
     let k = 0;
     let strCoasts = [];
     for (let s = 0; s < trs.length; s++) {
-        if(k == 0) {
+        if (k == 0) {
             j++;
             if (trs[s] == 'Запасы') {
                 k++;
@@ -22,10 +21,12 @@ function calculate () {
             continue;
         }
         i = s % j;
-        if (i == 0) { continue; } // first column
+        if (i == 0) {
+            continue;
+        } // first column
         if (k == j - 1) { // last row
-            (i != j-1) && needs.push(+trs[s]);
-        } else if (i == j-1) { // last column
+            (i != j - 1) && needs.push(+trs[s]);
+        } else if (i == j - 1) { // last column
             stocks.push(+trs[s]);
             k++;
         } else { // coast cell
@@ -36,20 +37,26 @@ function calculate () {
     let row = [];
     for (i = 0; i < strCoasts.length; i++) {
         row.push(strCoasts[i]);
-        
-        if ((i+1) % (j-2) == 0) {
+
+        if ((i + 1) % (j - 2) == 0) {
             coasts.push(row);
             referencePlan.push(new Array(row.length));
             row = [];
         }
     }
 
+    console.time('northWest');
     northWest(coasts, needs, stocks); // calculate by North-West methods
+    console.timeEnd('northWest');
+    console.time('cheapestCoast');
     cheapestCoast(coasts, needs, stocks, referencePlan); // calculate by cheapest coast method, and initialize referencePlan
+    console.timeEnd('cheapestCoast');
+    console.time('potentials');
     potentials(coasts, needs, stocks, referencePlan); // check referencePlan by method of potentials
+    console.timeEnd('potentials');
 }
 
-function cheapestCoast (coasts, needs, stocks, referencePlan) {
+function cheapestCoast(coasts, needs, stocks, referencePlan) {
     let end = false;
     let resCoast = 0;
     let minVl = 0;
@@ -74,21 +81,22 @@ function cheapestCoast (coasts, needs, stocks, referencePlan) {
     return resCoast;
 }
 
-function findMinCoast (coastsCopy) {
-    let minI = minJ = 1000, minCoast = 9999999;
+function findMinCoast(coastsCopy) {
+    let minI = minJ = 1000,
+        minCoast = 9999999;
     for (let i = 0; i < coastsCopy.length; i++) {
         for (let j = 0; j < coastsCopy[i].length; j++) {
-            if(!Number.isNaN(coastsCopy[i][j]) && coastsCopy[i][j] < minCoast && coastsCopy[i][j] != 0) {
+            if (!Number.isNaN(coastsCopy[i][j]) && coastsCopy[i][j] < minCoast && coastsCopy[i][j] != 0) {
                 minI = i;
                 minJ = j;
                 minCoast = coastsCopy[i][j];
             }
         }
     }
-    if(minI == 1000 || minJ == 1000) {
+    if (minI == 1000 || minJ == 1000) {
         for (let i = 0; i < coastsCopy.length; i++) {
             for (let j = 0; j < coastsCopy[i].length; j++) {
-                if(!Number.isNaN(coastsCopy[i][j]) && coastsCopy[i][j] < minCoast) {
+                if (!Number.isNaN(coastsCopy[i][j]) && coastsCopy[i][j] < minCoast) {
                     minI = i;
                     minJ = j;
                     minCoast = coastsCopy[i][j];
@@ -99,18 +107,22 @@ function findMinCoast (coastsCopy) {
     return [minI, minJ];
 }
 
-function checkEnd (needs, stocks) {
+function checkEnd(needs, stocks) {
     let res = true;
     needs.forEach(function (need) {
-        if (need != 0) { res = false; }
+        if (need != 0) {
+            res = false;
+        }
     });
     stocks.forEach(function (stock) {
-        if (stock != 0) { res = false; }
+        if (stock != 0) {
+            res = false;
+        }
     });
     return res;
 }
 
-function northWest (coasts, needs, stocks) {
+function northWest(coasts, needs, stocks) {
     let resCoast = 0;
     let minVl = 0;
     let coastsCopy = JSON.parse(JSON.stringify(coasts));
@@ -118,7 +130,7 @@ function northWest (coasts, needs, stocks) {
     let stocksCopy = JSON.parse(JSON.stringify(stocks));
 
     for (let i = 0, j = 0; i < coastsCopy.length && j < coastsCopy[i].length;) { // step i then step j
-            
+
         coast = coastsCopy[i][j];
         const nextJStep = (needsCopy[j] < stocksCopy[i]);
 
@@ -139,45 +151,50 @@ function northWest (coasts, needs, stocks) {
     return resCoast;
 }
 
-function potentials (coasts, needs, stocks, referencePlan) {
+function potentials(coasts, needs, stocks, referencePlan) {
     let end = false;
     let resCoast = 0;
     let referencePlanCopy = JSON.parse(JSON.stringify(referencePlan));
     let coastsCopy = JSON.parse(JSON.stringify(coasts));
-    let estimates = new Array(coasts.length);
-    for (let i = 0; i < estimates.length; i++) {
-        estimates[i] = new Array(coasts.length);
-    }
+    
     // let needsCopy = JSON.parse(JSON.stringify(needs));
     // let stocksCopy = JSON.parse(JSON.stringify(stocks));
 
     while (!end) {
         let potentials = getPotentials(coastsCopy, referencePlanCopy)
 
+        let estimates = new Array(coasts.length);
+        for (let i = 0; i < estimates.length; i++) {
+            estimates[i] = new Array(coasts.length);
+        }
         end = checkEstimatesIdleRoutes(coastsCopy, referencePlanCopy, potentials, estimates);
 
         let [minI, minJ] = findMinEstimate(estimates);
 
         if (!end) {
-            goCycle(minI, minJ, referencePlanCopy);
+            let path = goCycle(minI, minJ, referencePlanCopy);
+            referencePlanCopy = refreshReferencePlan(referencePlanCopy, path);
         }
     }
 
     resCoast = getCoast(coastsCopy, referencePlanCopy);
+    step = true;
 
     $('#potentioalsResultField').attr('value', 'Стоимость: ' + resCoast);
     return resCoast;
 }
 
-function getPotentials (coasts, referencePlan) {
+function getPotentials(coasts, referencePlan) {
     let pNeeds = new Array(coasts.length);
     let pStocks = new Array(coasts.length);
-    
+
     pNeeds[0] = 0;
 
     for (let i = 0; i < coasts.length; i++) {
         for (let j = 0; j < coasts.length; j++) {
-            if (referencePlan[i][j] == undefined) { continue; }
+            if (referencePlan[i][j] == undefined) {
+                continue;
+            }
             if (pNeeds[j] != undefined) {
                 pStocks[i] = coasts[i][j] - pNeeds[j];
             } else if (pStocks[i] != undefined) {
@@ -186,22 +203,27 @@ function getPotentials (coasts, referencePlan) {
         }
     }
 
-    return {needs: pNeeds, stocks: pStocks};
+    return {
+        needs: pNeeds,
+        stocks: pStocks
+    };
 }
 
-function checkEstimatesIdleRoutes (coasts, referencePlan, potentials, estimates) {
+function checkEstimatesIdleRoutes(coasts, referencePlan, potentials, estimates) {
     let end = true;
     let pots = 0;
     let res = 0;
     for (let i = 0; i < coasts.length; i++) {
         for (let j = 0; j < coasts.length; j++) {
-            if (referencePlan[i][j]) { continue; }
+            if (referencePlan[i][j]) {
+                continue;
+            }
 
             pots = potentials.needs[j] + potentials.stocks[i];
             res = coasts[i][j] - pots;
             estimates[i][j] = res;
-            
-            if (res < 0) {
+
+            if (res < 0 && step) {
                 end = false;
             }
         }
@@ -210,12 +232,14 @@ function checkEstimatesIdleRoutes (coasts, referencePlan, potentials, estimates)
     return end;
 }
 
-function getCoast (coasts, referencePlan) {
+function getCoast(coasts, referencePlan) {
     let res = 0;
 
     for (let i = 0; i < coasts.length; i++) {
         for (let j = 0; j < coasts.length; j++) {
-            if(!referencePlan[i][j]) { continue; }
+            if (!referencePlan[i][j]) {
+                continue;
+            }
             res += coasts[i][j] * referencePlan[i][j];
         }
     }
@@ -223,8 +247,9 @@ function getCoast (coasts, referencePlan) {
     return res;
 }
 
-function findMinEstimate (estimates) {
-    let minI = minJ = 0, minEstimate = 9999999;
+function findMinEstimate(estimates) {
+    let minI = minJ = 0,
+        minEstimate = 9999999;
     for (let i = 0; i < estimates.length; i++) {
         for (let j = 0; j < estimates[i].length; j++) {
             if (estimates[i][j] && estimates[i][j] < minEstimate) {
@@ -237,32 +262,43 @@ function findMinEstimate (estimates) {
     return [minI, minJ];
 }
 
-function goCycle (startI, startJ, referencePlan) {
+function goCycle(startI, startJ, referencePlan) {
     let curentI = startI;
     let curentJ = startJ;
     let pass = false;
     let findPoint = false;
 
-    let prevI = curentI, prevJ = curentJ;
+    let prevI = curentI,
+        prevJ = curentJ;
 
-    let passedPoint = [{i: startI, j: startJ}]; 
+    let passedPoint = [{
+        i: startI,
+        j: startJ
+    }];
 
     do {
         for (let i = 0; i < referencePlan.length; i++) {
             pass = passedPoint.some(function (pt) {
                 return pt.i == i && pt.j == curentJ;
             });
-            if(pass) {
+
+            if (i == startI && curentJ == startJ && passedPoint.length > 3) {
+                return passedPoint;
+            }
+            if (pass) {
                 continue;
             }
             if (referencePlan[i][curentJ]) {
                 curentI = i;
-                passedPoint.push({i: curentI, j: curentJ});
+                passedPoint.push({
+                    i: curentI,
+                    j: curentJ
+                });
                 findPoint = true;
                 break;
             }
         }
-        if(!findPoint) {
+        if (!findPoint) {
             for (let j = 0; j < referencePlan.length; j++) {
                 pass = passedPoint.some(function (pt) {
                     return (pt.i == curentI && pt.j == j);
@@ -270,12 +306,15 @@ function goCycle (startI, startJ, referencePlan) {
                 if (curentI == startI && j == startJ && passedPoint.length > 3) {
                     return passedPoint;
                 }
-                if(pass) {
+                if (pass) {
                     continue;
                 }
                 if (referencePlan[curentI][j]) {
                     curentJ = j;
-                    passedPoint.push({i: curentI, j: curentJ});
+                    passedPoint.push({
+                        i: curentI,
+                        j: curentJ
+                    });
                     findPoint = true;
                     break;
                 }
@@ -284,7 +323,23 @@ function goCycle (startI, startJ, referencePlan) {
         if (!findPoint) {
             return null;
         }
-        
-    } while (curentI != startI && curentJ != startJ)
 
+    } while (true)
+
+}
+
+function refreshReferencePlan(referencePlan) {
+    let j = 0;
+    for(let i = 0; i<100; i++) {
+        j++;
+    }
+    referencePlan = [
+        [0, 0, 6, 0],
+        [2, 6, 0, 0],
+        [2, 0, 0, 8],
+        [0, 0, 2, 0]
+    ];
+
+    step = false;
+    return referencePlan;
 }
